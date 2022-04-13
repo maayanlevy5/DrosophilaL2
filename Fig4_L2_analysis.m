@@ -50,22 +50,6 @@ set(gca, 'ytick', 1:26, 'yticklabels',els_names);
 set(gca, 'FontSize', 12,'TickLength',[0 0]);
 set(gca,'color',0*[1 1 1]);
 
-% differences
-figure('renderer', 'painters', 'position', [0,0,709,636]);
-colormap white;
-z_control1 = (l2_res-mean(l2_shuff,3))./std(l2_shuff,0,3);
-z_control1(z_control1<1.96) = NaN;
-imAlpha=ones(size(z_control1));
-imAlpha(~isnan(z_control1))=1;
-imAlpha(isnan(z_control1))=0;
-imagesc(z_control1,'AlphaData',imAlpha);
-set(gca, 'TickLabelInterpreter', 'none', 'LineWidth', 2);
-set(gca, 'xtick', 1:26, 'xticklabels',els_names);
-xtickangle(90);
-set(gca, 'ytick', 1:26, 'yticklabels',els_names);
-set(gca, 'FontSize', 12,'TickLength',[0 0]);
-set(gca,'color',0*[1 1 1]);
-
 % L-R pairs and following pairs
 l_r_inds = [];
 for i=1:2:25
@@ -87,6 +71,52 @@ end
 for i=1:size(follower_inds,1)
     follower_scores(i) = z_control1(follower_inds(i,1), follower_inds(i,2));
 end
+
+% differences
+% calculate original L2
+just_adj(just_adj>1) = 1;
+l2_res = [];
+for i=1:N
+    for j=1:N
+        vec1 = just_adj(:,i);
+        vec2 = just_adj(:,j);
+        temp = sqrt(sum((vec1-vec2).^2));
+        l2_res(i,j) = temp;
+    end
+end
+
+% control - shuffle the sub matrix 
+l2_shuff = [];
+for s=1:100
+    fly_adj_shuff = just_adj;
+    for i=1:N
+        fly_adj_shuff(:,i) = fly_adj_shuff(randsample(size(just_adj,1),size(just_adj,1)),i);
+    end
+    
+    % calculate l2
+    for i=1:N
+        for j=1:N
+            vec1 = fly_adj_shuff(:,i);
+            vec2 = fly_adj_shuff(:,j);
+            temp = sqrt(sum((vec1-vec2).^2));
+            l2_shuff(i,j,s) = temp;
+        end
+    end
+end
+figure('renderer', 'painters', 'position', [0,0,709,636]);
+colormap white;
+z_control1 = (l2_res-mean(l2_shuff,3))./std(l2_shuff,0,3);
+z_control1(z_control1<1.96) = NaN;
+imAlpha=ones(size(z_control1));
+imAlpha(~isnan(z_control1))=1;
+imAlpha(isnan(z_control1))=0;
+imagesc(z_control1,'AlphaData',imAlpha);
+set(gca, 'TickLabelInterpreter', 'none', 'LineWidth', 2);
+set(gca, 'xtick', 1:26, 'xticklabels',els_names);
+xtickangle(90);
+set(gca, 'ytick', 1:26, 'yticklabels',els_names);
+set(gca, 'FontSize', 12,'TickLength',[0 0]);
+set(gca,'color',0*[1 1 1]);
 
 % sensory and interneurons
 load('EL_sens_and_inter.mat');
